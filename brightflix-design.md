@@ -1,4 +1,4 @@
-# CineVault — Technical Design Specification
+# Brightflix — Technical Design Specification
 
 **Date:** 2026-09-09
 **Status:** Approved, pending implementation
@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-CineVault is an Android movie discovery client for the [OMDb API](https://www.omdbapi.com/).
+Brightflix is an Android movie discovery client for the [OMDb API](https://www.omdbapi.com/).
 Users browse curated collections, search the OMDb catalogue live as they type, inspect
 rich movie detail, and save movies to a favorites list that persists locally and works
 without a network connection.
@@ -93,21 +93,30 @@ Single module, three layers, strictly one-directional dependencies.
   inversion is what makes the domain layer testable without a fake Android environment.
 - DTOs never escape `data`. Mapping to domain models happens at the data-source boundary.
 
-### 4.1 Consistency rule on use cases
+### 4.1 Rule on use cases
 
-Every ViewModel reads through a use case, including the thin ones. A single
-`FavoritesViewModel` calling `FavoritesRepository` directly while its siblings call use
-cases reads as an inconsistency to a reviewer, and the uniform rule costs one small file.
-Use cases that would be pure pass-throughs are not created — where no composition is
-needed, the use case still owns ordering and UI-model mapping, which is real work.
+**Use cases where there is real logic; domain repository interfaces for plain observable
+reads.**
+
+An earlier draft of this spec required every ViewModel to read through a use case. That
+rule was revised during implementation because it forced pass-through files —
+`GetSurpriseMovieUseCase` forwarding to `repository.randomCachedMovie()` adds a file and no
+behaviour, which is exactly the padding the brief warns against.
+
+Repository *interfaces* live in `domain`, so a ViewModel depending on one is already
+depending on the domain layer; nothing about Clean Architecture is violated. The rule that
+actually matters is unchanged and absolute: **ViewModels never touch a Room DAO, a Retrofit
+service, or a DTO.**
+
+The result is four use cases, each doing genuine composition or branching (§11).
 
 ---
 
 ## 5. Package structure
 
 ```
-com.application.cinevault
-├── CineVaultApplication.kt        @HiltAndroidApp
+com.application.brightflix
+├── BrightflixApplication.kt        @HiltAndroidApp
 ├── MainActivity.kt
 ├── core/
 │   ├── designsystem/              Theme, color, type, spacing tokens
@@ -123,7 +132,7 @@ com.application.cinevault
 │   │   ├── mapper/                DTO → domain
 │   │   └── MovieRemoteDataSource.kt
 │   ├── local/
-│   │   ├── database/              CineVaultDatabase, TypeConverters
+│   │   ├── database/              BrightflixDatabase, TypeConverters
 │   │   ├── dao/                   FavoriteDao, RecentlyViewedDao,
 │   │   │                          MovieDetailDao, CollectionDao
 │   │   ├── entity/                Room entities
@@ -137,7 +146,7 @@ com.application.cinevault
 │   ├── repository/                Repository interfaces
 │   └── usecase/                   See §11
 ├── presentation/
-│   ├── navigation/                Routes, CineVaultNavHost, bottom bar
+│   ├── navigation/                Routes, BrightflixNavHost, bottom bar
 │   ├── home/
 │   ├── search/
 │   ├── detail/
@@ -371,15 +380,18 @@ to add or remove. The write lands in Room, and every observer re-emits.
 
 | Use case | Real work it does |
 | --- | --- |
-| `SearchMoviesUseCase` | Executes a paged search and combines the result with favorite IDs. |
-| `ObserveMovieDetailUseCase` | Combines the cached-detail stream with favorite state into one UI-ready stream. |
-| `ObserveHomeFeedUseCase` | Combines 3 collection streams + recently viewed + favorite IDs into a single `HomeFeed`. |
-| `ToggleFavoriteUseCase` | Reads current state, branches to add/remove. |
-| `RecordMovieViewUseCase` | Upserts by `imdbId` (dedup) and trims the table to 20 rows. |
-| `ObserveFavoritesUseCase` | Applies ordering and maps to UI list items. |
-| `GetSurpriseMovieUseCase` | Picks a random movie from the already-cached pool. Returns `null` when the cache is empty. |
+| `SearchMoviesUseCase` | Owns search policy: trims the query, rejects anything under 2 characters before it reaches the network, restricts results to films. |
+| `ObserveMovieDetailUseCase` | Joins the cached-detail stream with favorite state into one UI-ready stream. |
+| `ObserveHomeFeedUseCase` | Combines 3 collection streams + recently viewed + favorite IDs into a single `HomeFeed`, including refresh aggregation and oldest-timestamp selection. |
+| `ToggleFavoriteUseCase` | Reads current state and branches to add or remove, returning the resulting state. |
 
-No use case is a bare pass-through to a repository method.
+No use case is a bare pass-through. Three that an earlier draft proposed were deliberately
+**not** built, because each would have forwarded a single call unchanged:
+
+- `RecordMovieViewUseCase` — dedup and trimming belong to `RecentlyViewedRepository`, which
+  already owns them; the ViewModel calls the repository.
+- `ObserveFavoritesUseCase` — `FavoritesViewModel` observes `FavoritesRepository` directly.
+- `GetSurpriseMovieUseCase` — `HomeViewModel` calls `randomCachedMovie()` directly.
 
 ---
 
@@ -547,27 +559,59 @@ this environment**. This is stated plainly in the README rather than implied to 
 
 ### 15.1 Baseline
 
-The repository already contains an Android Studio scaffold: AGP 8.13.2, Kotlin 2.0.21,
-Gradle 8.13, compileSdk 36, minSdk 25, targetSdk 36.
+The repository arrived with an Android Studio scaffold whose build was **already broken**:
+AGP 8.13.2 and Kotlin 2.0.21 paired with AndroidX libraries (`core-ktx` 1.19.0,
+`lifecycle` 2.11.0, `activity-compose` 1.13.0) that require **AGP 9.1.0+ and compileSdk 37**.
+Verifying the baseline before making changes is what surfaced this, and it justified the
+"foundation phase must end green" rule below.
 
-### 15.2 Foundation phase must end green
+### 15.2 Resolved toolchain
 
-Dependency versions are **resolved empirically, not guessed**. The scaffold pairs a very
-new AGP with a Sept-2024 Compose BOM, and adding Hilt, KSP, Room and type-safe Navigation
-requires the Kotlin/KSP/Compose versions to line up exactly. Phase 2 therefore wires every
-dependency and ends with a passing `assembleDebug` **and** `test` before a single feature
-is written. A version mismatch discovered there costs nothing; the same mismatch
-discovered in Phase 5 is expensive.
+Dependency versions were **resolved empirically against live repository metadata, not
+guessed**, then proven by a green build before any feature code was written.
 
-Changes to the scaffold in Phase 2:
+| Component | Version |
+| --- | --- |
+| Android Gradle Plugin | 9.4.0 |
+| Gradle | 9.7.1 |
+| Kotlin | 2.4.20 |
+| KSP | 2.3.11 |
+| Hilt | 2.60.1 |
+| Room | 2.8.4 |
+| Compose BOM | 2026.08.00 |
+| Navigation Compose | 2.10.0 |
+| Retrofit / OkHttp | 3.0.0 / 5.5.0 |
+| Coil | 3.6.2 |
+| Robolectric / Turbine | 4.16.1 / 1.2.1 |
+| compileSdk / targetSdk / minSdk | 37 / 37 / 25 |
+| jvmTarget | 17 |
 
-- Rename package `com.application.brightflix` → `com.application.cinevault`
-- `jvmTarget` 11 → 17; replace the deprecated `kotlinOptions` block with `compilerOptions`
-- Add `<uses-permission android:name="android.permission.INTERNET" />`
-- Enable `buildConfig`; plumb `OMDB_API_KEY` from `local.properties` → `BuildConfig`
-- Bump Compose BOM; add Hilt, KSP, Room, Retrofit, OkHttp, kotlinx.serialization, Coil,
-  Navigation Compose, Turbine, Robolectric, coroutines-test
+**Four non-obvious incompatibilities had to be resolved**, recorded here because none is
+discoverable without hitting it:
+
+1. AGP 9 rejects the `org.jetbrains.kotlin.android` plugin — Kotlin support is built in.
+2. **KSP is incompatible with AGP's built-in Kotlin.** Hilt and Room both require KSP, so
+   built-in Kotlin must be disabled (`android.builtInKotlin=false`) and KGP applied explicitly.
+3. KGP then fails against AGP 9's new DSL (`ApplicationExtensionImpl cannot be cast to
+   BaseExtension`), requiring `android.newDsl=false`.
+4. KSP no longer versions as `<kotlin>-<ksp>` (e.g. `2.2.21-2.0.5`) but on an independent
+   line (`2.3.11`). Missing this makes Kotlin appear capped at 2.2.21.
+
+Separately, `platforms;android-37` does not exist: Android now publishes **minor-versioned
+SDK packages**, so the correct install target is `platforms;android-37.0`.
+
+Both `android.builtInKotlin=false` and `android.newDsl=false` are temporary compatibility
+shims, commented as such in `gradle.properties`. They can be removed once KGP supports
+AGP 9's new DSL and KSP supports built-in Kotlin.
+
+Other Phase 2 changes:
+
+- `jvmTarget` 11 → 17; the deprecated `kotlinOptions` block replaced with `compilerOptions`
+- Added `INTERNET` and `ACCESS_NETWORK_STATE` permissions
+- Enabled `buildConfig`; plumbed `OMDB_API_KEY` from `local.properties` → `BuildConfig`
 - `testOptions { unitTests.isIncludeAndroidResources = true }` for Robolectric
+- The package was **not** renamed: `com.application.brightflix` is retained to stay
+  consistent with the existing GitHub remote.
 
 ### 15.3 API key and signing
 

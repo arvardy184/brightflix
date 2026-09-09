@@ -1,58 +1,84 @@
 package com.application.brightflix.ui.theme
 
 import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+private val DarkColors = darkColorScheme(
+    primary = AmberPrimary,
+    onPrimary = AmberOnPrimary,
+    primaryContainer = AmberContainer,
+    onPrimaryContainer = AmberOnContainer,
+    secondary = SlateSecondary,
+    onSecondary = SlateOnSecondary,
+    secondaryContainer = SlateContainer,
+    onSecondaryContainer = SlateOnContainer,
+    background = CinemaBackground,
+    onBackground = CinemaOnSurface,
+    surface = CinemaSurface,
+    onSurface = CinemaOnSurface,
+    surfaceVariant = CinemaSurfaceVariant,
+    onSurfaceVariant = CinemaOnSurfaceVariant,
+    outline = CinemaOutline,
+    error = ErrorDark,
+    onError = OnErrorDark,
+    errorContainer = ErrorContainerDark,
+    onErrorContainer = OnErrorContainerDark,
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+private val LightColors = lightColorScheme(
+    primary = AmberPrimaryLight,
+    onPrimary = OnAmberPrimaryLight,
+    primaryContainer = AmberContainerLight,
+    onPrimaryContainer = OnAmberContainerLight,
+    secondary = SlateSecondaryLight,
+    onSecondary = OnSlateSecondaryLight,
+    secondaryContainer = SlateContainerLight,
+    onSecondaryContainer = OnSlateContainerLight,
+    background = PaperBackground,
+    onBackground = PaperOnSurface,
+    surface = PaperSurface,
+    onSurface = PaperOnSurface,
+    surfaceVariant = PaperSurfaceVariant,
+    onSurfaceVariant = PaperOnSurfaceVariant,
+    outline = PaperOutline,
+    error = ErrorLight,
+    onError = OnErrorLight,
+    errorContainer = ErrorContainerLight,
+    onErrorContainer = OnErrorContainerLight,
 )
 
+/**
+ * @param dynamicColor deliberately absent. Dynamic colour would let the wallpaper repaint
+ *   the app, which undermines a deliberate cinematic identity and makes poster artwork
+ *   clash unpredictably.
+ */
 @Composable
 fun BrightflixTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+    val colorScheme = if (darkTheme) DarkColors else LightColors
+    val view = LocalView.current
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
+            // Status bar icons must contrast with the app background, not the system theme.
+            WindowCompat.getInsetsController(window, view)
+                .isAppearanceLightStatusBars = !darkTheme
+        }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+        typography = BrightflixTypography,
+        content = content,
     )
 }

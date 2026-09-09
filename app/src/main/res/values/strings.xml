@@ -1,3 +1,82 @@
 <resources>
-    <string name="app_name">brightflix</string>
+    <string name="app_name">Brightflix</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="action_back">Go back</string>
+
+    <!-- Home -->
+    <string name="home_title">Brightflix</string>
+    <string name="home_tagline">Discover. Save. Come back anytime.</string>
+    <string name="home_section_recently_viewed">Recently viewed</string>
+    <!-- Deliberately not "Trending" or "Top Rated": OMDb provides no ranking data, so
+         those labels would claim something the app cannot know. -->
+    <string name="home_section_featured">Featured collections</string>
+    <string name="home_surprise_me">Surprise me</string>
+    <string name="home_surprise_me_description">Open a random movie from your saved collections</string>
+    <string name="home_surprise_me_unavailable">Surprise me is unavailable until collections have loaded</string>
+
+    <!-- Search -->
+    <string name="search_field_label">Search movies</string>
+    <string name="search_field_placeholder">Search by title…</string>
+    <string name="search_clear">Clear search</string>
+    <string name="search_results_count">%1$d results</string>
+
+    <!-- Detail -->
+    <string name="detail_plot">Plot</string>
+    <string name="detail_director">Director</string>
+    <string name="detail_writers">Writers</string>
+    <string name="detail_cast">Cast</string>
+    <string name="detail_ratings">Ratings</string>
+    <string name="detail_awards">Awards</string>
+    <string name="detail_box_office">Box office</string>
+    <string name="detail_released">Released</string>
+    <string name="detail_languages">Languages</string>
+    <string name="detail_countries">Countries</string>
+    <string name="detail_imdb_rating">%1$s / 10</string>
+    <string name="detail_imdb_votes">%1$s votes</string>
+    <string name="detail_metascore">Metascore %1$d</string>
+    <string name="detail_runtime">%1$d min</string>
+    <string name="detail_poster_description">Poster for %1$s</string>
+
+    <!-- Favorite action. Names the movie so the label is meaningful out of context. -->
+    <string name="favorite_add">Add %1$s to favorites</string>
+    <string name="favorite_remove">Remove %1$s from favorites</string>
+    <string name="favorite_save_short">Save</string>
+    <string name="favorite_saved_short">Saved</string>
+
+    <!-- Empty states -->
+    <string name="empty_search_title">Find your next movie</string>
+    <string name="empty_search_subtitle">Search by title to explore thousands of films.</string>
+    <string name="empty_no_results_title">No movies found</string>
+    <string name="empty_no_results_subtitle">Try a different title or check the spelling.</string>
+    <string name="empty_favorites_title">Your favorite movies will appear here</string>
+    <string name="empty_favorites_subtitle">Tap the heart on any movie to save it for later.</string>
+    <string name="empty_recently_viewed_title">Movies you explore will appear here</string>
+    <string name="empty_offline_search_title">Search needs a connection</string>
+    <string name="empty_offline_search_subtitle">You can still browse your favorites and recently viewed movies while offline.</string>
+    <string name="empty_too_many_results_title">Too many matches</string>
+    <string name="empty_too_many_results_subtitle">Try a more specific title to narrow things down.</string>
+
+    <!-- Errors. Technical detail never reaches the user. -->
+    <string name="error_offline">You\'re offline. Check your connection and try again.</string>
+    <string name="error_timeout">That took too long. Please try again.</string>
+    <string name="error_server">Something went wrong on our side. Please try again.</string>
+    <string name="error_not_found">We couldn\'t find that movie.</string>
+    <string name="error_too_many_results">Too many matches — try a more specific title.</string>
+    <string name="error_missing_api_key">No OMDb API key is configured. See the README setup steps.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="action_retry">Retry</string>
+
+    <!-- Cached / stale content -->
+    <string name="stale_offline">You\'re offline · Showing saved data</string>
+    <string name="stale_refresh_failed">Couldn\'t refresh · Showing saved data</string>
+    <string name="stale_updated">Updated %1$s</string>
+    <string name="offline_banner">You\'re offline</string>
+
+    <!-- Generic -->
+    <string name="loading">Loading</string>
+    <string name="poster_unavailable">No poster available for %1$s</string>
 </resources>
