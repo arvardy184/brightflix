@@ -13,9 +13,6 @@ three-layer architecture (presentation → domain → data).
 
 ## Screenshots
 
-> Capture these from a device or emulator running the debug build, and drop them in
-> `docs/screenshots/`. The layouts below are the ones worth showing.
-
 | Home | Search | Detail |
 | :---: | :---: | :---: |
 | ![Home](docs/screenshots/home.png) | ![Search](docs/screenshots/search.png) | ![Detail](docs/screenshots/detail.png) |
@@ -26,9 +23,8 @@ three-layer architecture (presentation → domain → data).
 | ![Favorites](docs/screenshots/favorites.png) | ![Offline](docs/screenshots/offline.png) |
 | Saved movies, available offline | Cached content with a "showing saved data" banner |
 
-**To capture the offline shot:** load the app once with a connection, then enable
-aeroplane mode and relaunch. Home keeps rendering its cached collections with the staleness
-banner, and Favorites and Recently Viewed continue to work normally.
+The offline screenshot demonstrates the cache-first experience after previously loaded content
+is reopened without a connection.
 
 ---
 
